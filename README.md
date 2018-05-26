@@ -84,5 +84,13 @@ http://<outer.host>:5678/admin/index
 ### 浏览器
 支持各种浏览器，并能自适应
 
+### 构建Exe
+需要懂一点Python知识。
+
+1. 下载安装Python 2, 安装requests等依赖
+2. pip install pyinstaller
+3. pyinstaller --onefile --noconsole tydesk.py
+
+
 
 
