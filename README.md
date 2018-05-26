@@ -21,15 +21,15 @@
 ## 使用指南
 
 ### 下载服务器
-[https://github.com/tydesk/tyserver/releases](https://github.com/tydesk/tyserver/releases "服务器下载页面")
+[https://github.com/tydesk/tyserver/releases](https://github.com/tydesk/tyserver/releases "服务器下载页面")， 下载TyServer.zip
 
 ### 配置服务器
-下载完毕后，解压缩TyServer.zip。直接启动里面的Exe即可启动服务器。 不要，要发布新应用需要配置config.json
+下载完毕后，解压缩TyServer.zip。直接启动里面的Exe即可启动服务器。 要发布新应用，需要配置config.json
 
 
 ```json
 {
-	"outApps": [
+"outApps": [
     { "id":1, "title": "病理报告", "url": "http://baidu.com/__", "open": "chrome", "net": "out"},
     { "id":2, "title": "百度URL测试", "url": "http://baidu.com", "open": "chrome", "net": "in"}
   ],
@@ -46,7 +46,31 @@
 }
 ```
 
+为了尽量简单和更容易扩展，分发的服务器端没有使用GUI界面，而是使用配置JSON的方式来实现。下面来解释几个注意事项：
+- outApps为门诊应用；inApps为住院应用；otherApps为其他应用；admins管理端界面访问授权
+- url 当包括参数时，使用双下划线来代替
+- open为可选打开URL的浏览器类型：IE, chrome, firefox
+- 内外网：out为外网, in为内网
 
+另外，如果你略懂一些Python和JSON的知识，你完全可以对桌面入口程序进行深度定制。config.json实际上就是一个JSON数据库，您可以采取Rest方式访问它，这也是没有使用GUI的好处。
+
+### 下载客户端
+[https://github.com/tydesk/tydesk/releases](https://github.com/tydesk/tydesk/releases)，下载tydesk.zip
+
+### 配置客户端
+下载完毕后，解压缩tydesk.zip。 同样，无需安装点击里面的Exe文件即可。事先需修改config.ini，指向正确的内网、外网服务器IP
+```ini
+inner.host=172.20.10.100
+outer.host=192.168.30.101
+```
+> inner.host为服务器的内网IP；outer.host为服务器的外网IP
+
+### 可以使用了
+新分发的WEB应用在30分钟后会自动更新到所有的客户端上。 根据所在内外网，管理员可以往访问管理界面了：
+```html
+http://<inner.host>:5678/admin/index
+http://<outer.host>:5678/admin/index
+```
 
 
 
