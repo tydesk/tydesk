@@ -126,6 +126,9 @@ class App():
     self.root = Tk()
     self.root.style = Style()
     self.root.style.theme_use("clam")
+    self.root.style.configure("RW.TButton", foreground="red", background="white", width=20)
+    self.root.style.configure("BW.TButton", foreground="black", background="white", width=20)
+
     self.root.resizable(0,0)
     self.LoadConfig()    
     self.LoadData()
@@ -138,6 +141,7 @@ class App():
       payload = {"net": self.net, "uid": GetUID(), "os": osName, "ip": GetIP(), "usb": GetUSBStor()}            
       url = "http://" + self.host  + r"/connect"      
       r = requests.post(url, data=payload, timeout=0.1)
+      self.msg = r.json()['msg']
     except requests.exceptions.RequestException as e:
       pass
     self.BuildUI()
@@ -184,7 +188,11 @@ class App():
 
     self.label3 = Label(self.frame, text=u"其他系统", font=fnt)
     self.label3.grid(row=0, column=2, padx=(100,100), pady=10)
-    btn = Button(self.frame, text=u"统医桌面WEB版", width=50, command=partial(self.OpenWeb))
+    
+    if self.msg == 'ok':
+      btn = Button(self.frame, text=u"查看本机信息", style="BW.TButton", command=partial(self.OpenWeb))      
+    else:
+      btn = Button(self.frame, text=self.msg,  style="RW.TButton", command=partial(self.OpenWeb))
     btn.grid(row=1, column=2, sticky='WENS', padx=10, ipady=5)
 
     idx = 2
