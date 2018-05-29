@@ -132,8 +132,13 @@ class App():
     self.root.resizable(0,0)
     self.LoadConfig()    
     self.LoadData()
-    self.connectServer()    
+    self.connectServer()
+    self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     self.root.mainloop()
+
+  def on_closing(self):
+    if tkMessageBox.askokcancel(u"退出统医桌面", u"确定退出统医桌面吗？"):
+      self.root.destroy()
 
   def connectServer(self):
     try:
