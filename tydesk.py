@@ -99,14 +99,8 @@ def GetUSBStor():
 def GetIP():
   return socket.gethostbyname(socket.gethostname())
 
-def GetOutCache():
+def GetAppsCache():
   return expanduser("~") + r"\tyout.json"
-
-def GetInCache():
-  return expanduser("~") + r"\tyin.json"
-
-def GetOtherCache():
-  return expanduser("~") + r"\tyother.json"
 
 def GetUID():
   path = expanduser("~") + r"\pcuid.txt"
@@ -145,7 +139,7 @@ class App():
       osName = platform.system() + " " + platform.release()
       payload = {"net": self.net, "uid": GetUID(), "os": osName, "ip": GetIP(), "usb": GetUSBStor()}            
       url = "http://" + self.host  + r"/connect"      
-      r = requests.post(url, data=payload, timeout=0.1)
+      r = requests.post(url, data=payload, timeout=0.1)      
       self.msg = r.json()['msg']
     except requests.exceptions.RequestException as e:
       self.msg = "离线运行"
@@ -167,8 +161,8 @@ class App():
     self.label.grid(row=0, column=0, pady=10)
     self.entry.grid(row=1, column=0, padx=10)
     idx = 2
-    for app in self.OutItems:
-      if app.get('net') and self.net == app['net']:
+    for app in self.apps:
+      if app.get('col') == 1 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], width=15, 
           command= partial(self.OnClickOutBtn, open=app['open'], url=app['url']))
         btn.grid(row=idx, column=0, sticky='WENS', padx=10, ipady=5)
@@ -183,8 +177,8 @@ class App():
     self.label2.grid(row=0, column=1, pady=10)
     self.entry2.grid(row=1, column=1, padx=10)
     idx = 2
-    for app in self.InItems:
-      if app.get('net') and self.net == app['net']:
+    for app in self.apps:
+      if app.get('col') == 2 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], width=15,
           command= partial(self.OnClickInBtn, open=app['open'], url=app['url']))
         btn.grid(row=idx, column=1, sticky='WENS', padx=10, ipady=5)
@@ -202,8 +196,8 @@ class App():
     btn.grid(row=1, column=2, sticky='WENS', padx=10, ipady=5)
 
     idx = 2
-    for app in self.OtherItems:
-      if app.get('net') and self.net == app['net']:
+    for app in self.apps:
+      if app.get('col') == 3 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], width=50,
           command= partial(self.OnClick, open=app['open'], url=app['url']))
         btn.grid(row=idx, column=2, sticky='WENS', padx=10, ipady=5)
@@ -282,42 +276,16 @@ class App():
 
   def LoadData(self):
     try:
-      r = requests.get("http://" + self.host + "/outApps", timeout=0.1)
-      self.OutItems = r.json()     
-      with open(GetOutCache(), 'w+') as outfile:
+      r = requests.get("http://" + self.host + "/apps", timeout=0.1)
+      self.apps = r.json()     
+      with open(GetAppsCache(), 'w+') as outfile:
         json.dump(r.json(), outfile)
     except requests.exceptions.RequestException as e:
-      if os.path.isfile(GetOutCache()):
-        with open(GetOutCache(), 'r') as json_data:
+      if os.path.isfile(GetAppsCache()):
+        with open(GetAppsCache(), 'r') as json_data:
           d = json.load(json_data)
-          self.OutItems = d
+          self.apps = d
       else:
-        self.OutItems = []
-
-    try:
-      r = requests.get("http://" + self.host + "/inApps", timeout=0.1)
-      self.InItems = r.json()     
-      with open(GetInCache(), 'w+') as outfile:
-        json.dump(r.json(), outfile)
-    except requests.exceptions.RequestException as e:
-      if os.path.isfile(GetInCache()):
-        with open(GetInCache(), 'r') as json_data:
-          d = json.load(json_data)
-          self.InItems = d
-      else:
-        self.InItems = []
-
-    try:
-      r = requests.get("http://" + self.host + "/otherApps", timeout=0.1)
-      self.OtherItems = r.json()     
-      with open(GetOtherCache(), 'w+') as outfile:
-        json.dump(r.json(), outfile)
-    except requests.exceptions.RequestException as e:
-      if os.path.isfile(GetOtherCache()):
-        with open(GetOtherCache(), 'r') as json_data:
-          d = json.load(json_data)
-          self.OtherItems = d
-      else:
-        self.OtherItems = []
+        self.apps = []
 
 app = App()
