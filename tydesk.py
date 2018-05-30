@@ -164,7 +164,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 1 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], width=15, 
-          command= partial(self.OnClickOutBtn, open=app['open'], url=app['url']))
+          command= partial(self.OnClickOutBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
         btn.grid(row=idx, column=0, sticky='WENS', padx=10, ipady=5)
         idx = idx + 1
 
@@ -180,7 +180,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 2 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], width=15,
-          command= partial(self.OnClickInBtn, open=app['open'], url=app['url']))
+          command= partial(self.OnClickInBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
         btn.grid(row=idx, column=1, sticky='WENS', padx=10, ipady=5)
         idx = idx + 1
     lblx1 = Label(self.frame, text=u"")
@@ -199,7 +199,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 3 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], width=50,
-          command= partial(self.OnClick, open=app['open'], url=app['url']))
+          command= partial(self.OnClick, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
         btn.grid(row=idx, column=2, sticky='WENS', padx=10, ipady=5)
         idx = idx + 1
     lblx2 = Label(self.frame, text=u"")
@@ -214,15 +214,24 @@ class App():
       ie = webbrowser.get(webbrowser.iexplore)    
       ie.open(url)
 
-  def OnClickOutBtn(self, open, url):
+  def OnClickOutBtn(self, open, url, id, sso):
     num = self.entry.get().strip()
-    self.OnClick(open, url, num)
+    self.OnClick(open, url, num, id, sso)
 
-  def OnClickInBtn(self, open, url):
+  def OnClickInBtn(self, open, url, id, sso):
     num = self.entry2.get().strip()
-    self.OnClick(open, url, num)
+    self.OnClick(open, url, num, id, sso)
 
-  def OnClick(self, open, url, num):
+  def OnClick(self, open, _url, num, id, sso):
+    if sso:   
+      try:
+        r = requests.get("http://" + self.host + "/ping", timeout=0.1)
+        url = "http://" + self.host  + r"/ty/apps/" + id + "/open?uid=" + GetUID() 
+      except requests.exceptions.RequestException as e:
+        url = _url
+    else:
+      url = _url
+
     if "__" in url:
       if len(num) > 0:
         url = url.replace("__", num)
