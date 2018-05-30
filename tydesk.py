@@ -148,6 +148,7 @@ class App():
       r = requests.post(url, data=payload, timeout=0.1)
       self.msg = r.json()['msg']
     except requests.exceptions.RequestException as e:
+      self.msg = "离线运行"
       pass
     self.BuildUI()
     self.root.after(30*60*1000, self.connectServer)
