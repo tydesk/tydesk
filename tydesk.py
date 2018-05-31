@@ -146,7 +146,11 @@ class App():
       self.msg = "离线运行"
       pass
     self.BuildUI()
-    self.root.after(30*60*1000, self.connectServer)
+    if self.RTM.lower() in ("yes", "true", "t", "1"):    
+      delay = 5*1000
+    else:
+      delay = 30*60*1000
+    self.root.after(delay, self.connectServer)
 
   def BuildUI(self):
     fnt = tkFont.Font(family="Arial Bold", size=14)
@@ -287,6 +291,7 @@ class App():
       self.config = configobj.ConfigObj(iniFile)
       self.innerHost = self.config["inner.host"]
       self.outerHost = self.config["outer.host"]
+      self.RTM = self.config["real.time.monitoring"]
       self.ip = GetIP()
 
       if self.ip[:self.ip.find('.')] == self.innerHost[:self.innerHost.find('.')]:        
