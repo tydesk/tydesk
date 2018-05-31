@@ -245,7 +245,7 @@ class App():
     if sso:   
       try:
         r = requests.get("http://" + self.host + "/ping", timeout=0.1)
-        url = "http://" + self.host  + r"/ty/apps/" + id + "/open?uid=" + GetUID() 
+        url = "http://" + self.host  + r"/ty/s/apps/" + id + "/open?uid=" + GetUID() 
       except requests.exceptions.RequestException as e:
         url = url2
     else:
