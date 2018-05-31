@@ -120,8 +120,9 @@ class App():
     self.root = Tk()
     self.root.style = Style()
     self.root.style.theme_use("clam")
-    self.root.style.configure("RW.TButton", foreground="red", background="white", width=20)
-    self.root.style.configure("BW.TButton", foreground="black", background="white", width=20)
+    self.root.style.configure("TY.TButton", font=(u'微软雅黑', 12))
+    self.root.style.configure("RW.TButton", font=(u'微软雅黑', 12), foreground="red", background="white", width=25)
+    self.root.style.configure("BW.TButton", font=(u'微软雅黑', 12), foreground="black", background="white", width=25)
 
     self.root.resizable(0,0)
     self.LoadConfig()    
@@ -148,62 +149,69 @@ class App():
     self.root.after(30*60*1000, self.connectServer)
 
   def BuildUI(self):
-    fnt = tkFont.Font(size=24)
-    fnt2 = tkFont.Font(family="Arial Bold", size=36)
+    fnt = tkFont.Font(family="Arial Bold", size=14)
+    fnt2 = tkFont.Font(family="Arial Bold", size=28)
     if self.frame is not None:
       self.frame.destroy()
     self.frame = Frame(self.root)
     self.frame.pack()
     self.root.title(u"统医桌面 tydesk.com")
 
-    self.label = Label(self.frame, text=u"门诊相关", font=fnt)
-    self.entry = Entry(self.frame, width=12, font=fnt2)
-    self.label.grid(row=0, column=0, pady=10)
-    self.entry.grid(row=1, column=0, padx=10)
+    self.labelWeb = Label(self.frame, text=u"网页应用", font=fnt)    
+    self.labelWeb.grid(row=0, column=0, pady=15)
+    btn = Button(self.frame, text=u"统医网页", style="BW.TButton", command=partial(self.OpenWeb))
+    btn.grid(row=1, column=0, sticky='WENS', padx=5, ipady=5)
+   
     idx = 2
     for app in self.apps:
       if app.get('col') == 1 and self.net == app['net']:
-        btn = Button(self.frame, text=app['title'], width=15, 
-          command= partial(self.OnClickOutBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
-        btn.grid(row=idx, column=0, sticky='WENS', padx=10, ipady=5)
+        btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15, 
+          command= partial(self.OnClickWeb, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+        btn.grid(row=idx, column=0, sticky='WENS', padx=5, ipady=5)
         idx = idx + 1
 
-    lblx = Label(self.frame, text=u"")
-    lblx.grid(row=idx, column=0)
+    self.labelDesk = Label(self.frame, text=u"桌面应用", font=fnt)    
+    self.labelDesk.grid(row=0, column=1, pady=15)
 
+    if self.msg == 'ok':
+      btn = Button(self.frame, text=u"本机信息", style="BW.TButton", command=partial(self.OpenWeb))      
+    else:
+      btn = Button(self.frame, text=self.msg, style="RW.TButton", command=partial(self.OpenWeb))
+    btn.grid(row=1, column=1, sticky='WENS', padx=5, ipady=5)
 
-    self.label2 = Label(self.frame, text=u"住院相关", font=fnt)
-    self.entry2 = Entry(self.frame, width=12, font=fnt2)
-    self.label2.grid(row=0, column=1, pady=10)
-    self.entry2.grid(row=1, column=1, padx=10)
     idx = 2
     for app in self.apps:
-      if app.get('col') == 2 and self.net == app['net']:
-        btn = Button(self.frame, text=app['title'], width=15,
-          command= partial(self.OnClickInBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
-        btn.grid(row=idx, column=1, sticky='WENS', padx=10, ipady=5)
+      if app.get('col') == 2 and self.net == app['net'] and os.path.isfile(app['url']):
+        btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15, 
+          command= partial(self.OnClickDesktop, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+        btn.grid(row=idx, column=1, sticky='WENS', padx=5, ipady=5)
         idx = idx + 1
-    lblx1 = Label(self.frame, text=u"")
-    lblx1.grid(row=idx, column=1)
 
-    self.label3 = Label(self.frame, text=u"其他系统", font=fnt)
-    self.label3.grid(row=0, column=2, padx=(100,100), pady=10)
-    
-    if self.msg == 'ok':
-      btn = Button(self.frame, text=u"查看本机信息", style="BW.TButton", command=partial(self.OpenWeb))      
-    else:
-      btn = Button(self.frame, text=self.msg,  style="RW.TButton", command=partial(self.OpenWeb))
-    btn.grid(row=1, column=2, sticky='WENS', padx=10, ipady=5)
-
+    self.label = Label(self.frame, text=u"门诊相关", font=fnt)
+    self.entry = Entry(self.frame, width=10, font=fnt2)
+    self.label.grid(row=0, column=2, padx=(50, 5), pady=15)
+    self.entry.grid(row=1, column=2, padx=(50, 5))
     idx = 2
     for app in self.apps:
       if app.get('col') == 3 and self.net == app['net']:
-        btn = Button(self.frame, text=app['title'], width=50,
-          command= partial(self.OnClick, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
-        btn.grid(row=idx, column=2, sticky='WENS', padx=10, ipady=5)
+        btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15, 
+          command= partial(self.OnClickOutBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+        btn.grid(row=idx, column=2, sticky='WENS', padx=(50, 5), ipady=5)
         idx = idx + 1
-    lblx2 = Label(self.frame, text=u"")
-    lblx2.grid(row=idx, column=2)
+
+
+    self.label2 = Label(self.frame, text=u"住院相关", font=fnt)
+    self.entry2 = Entry(self.frame, width=10, font=fnt2)
+    self.label2.grid(row=0, column=3, pady=15)
+    self.entry2.grid(row=1, column=3, padx=5)
+    idx = 2
+    for app in self.apps:
+      if app.get('col') == 4 and self.net == app['net']:
+        btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15,
+          command= partial(self.OnClickInBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+        btn.grid(row=idx, column=3, sticky='WENS', padx=5, ipady=5)
+        idx = idx + 1
+
   
   def OpenWeb(self):
     url = "http://" + self.host  + r"/ty/index?uid=" + GetUID()
@@ -222,15 +230,22 @@ class App():
     num = self.entry2.get().strip()
     self.OnClick(open, url, num, id, sso)
 
-  def OnClick(self, open, _url, num, id, sso):
+  def OnClickWeb(self, open, url, id, sso):
+    self.OnClick(open, url, "", id, sso)
+
+  def OnClickDesktop(self, open, url, id, sso):
+    p = subprocess.Popen('start /B "" "' + url + '"', shell=True)
+    p.wait()
+
+  def OnClick(self, open, url2, num, id, sso):
     if sso:   
       try:
         r = requests.get("http://" + self.host + "/ping", timeout=0.1)
         url = "http://" + self.host  + r"/ty/apps/" + id + "/open?uid=" + GetUID() 
       except requests.exceptions.RequestException as e:
-        url = _url
+        url = url2
     else:
-      url = _url
+      url = url2
 
     if "__" in url:
       if len(num) > 0:
