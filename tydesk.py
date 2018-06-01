@@ -125,8 +125,7 @@ class App():
     self.root.style.configure("BW.TButton", font=(u'微软雅黑', 12), foreground="black", background="white", width=25)
 
     self.root.resizable(0,0)
-    self.LoadConfig()    
-    self.LoadData()
+    self.LoadConfig()
     self.connectServer()
     self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     self.root.mainloop()
@@ -142,9 +141,18 @@ class App():
       url = "http://" + self.host  + r"/connect"      
       r = requests.post(url, data=payload, timeout=0.1)      
       self.msg = r.json()['msg']
+      self.apps = r.json()['apps']  
+      with open(GetAppsCache(), 'w+') as outfile:
+        json.dump(r.json(), outfile)
     except requests.exceptions.RequestException as e:
       self.msg = "离线运行"
-      pass
+      if os.path.isfile(GetAppsCache()):
+        with open(GetAppsCache(), 'r') as json_data:
+          d = json.load(json_data)
+          self.apps = d
+      else:
+        self.apps = []
+
     self.BuildUI()
     if self.RTM.lower() in ("yes", "true", "t", "1"):    
       delay = 5*1000
@@ -153,7 +161,7 @@ class App():
     self.root.after(delay, self.connectServer)
 
   def BuildUI(self):
-    fnt = tkFont.Font(family="Arial Bold", size=14)
+    fnt = tkFont.Font(family="Arial Bold", size=18)
     fnt2 = tkFont.Font(family="Arial Bold", size=28)
     if self.frame is not None:
       self.frame.destroy()
@@ -170,7 +178,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 1 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15, 
-          command= partial(self.OnClickWeb, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+          command= partial(self.OnClickWeb, open=app['open'], url=app['url'], id=app['id']))
         btn.grid(row=idx, column=0, sticky='WENS', padx=5, ipady=5)
         idx = idx + 1
 
@@ -187,7 +195,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 2 and self.net == app['net'] and os.path.isfile(app['url']):
         btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15, 
-          command= partial(self.OnClickDesktop, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+          command= partial(self.OnClickDesktop, open=app['open'], url=app['url'], id=app['id']))
         btn.grid(row=idx, column=1, sticky='WENS', padx=5, ipady=5)
         idx = idx + 1
 
@@ -199,7 +207,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 3 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15, 
-          command= partial(self.OnClickOutBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+          command= partial(self.OnClickOutBtn, open=app['open'], url=app['url'], id=app['id']))
         btn.grid(row=idx, column=2, sticky='WENS', padx=(50, 5), ipady=5)
         idx = idx + 1
 
@@ -212,7 +220,7 @@ class App():
     for app in self.apps:
       if app.get('col') == 4 and self.net == app['net']:
         btn = Button(self.frame, text=app['title'], style="TY.TButton", width=15,
-          command= partial(self.OnClickInBtn, open=app['open'], url=app['url'], id=app['id'], sso=app['sso']))
+          command= partial(self.OnClickInBtn, open=app['open'], url=app['url'], id=app['id']))
         btn.grid(row=idx, column=3, sticky='WENS', padx=5, ipady=5)
         idx = idx + 1
 
@@ -226,31 +234,22 @@ class App():
       ie = webbrowser.get(webbrowser.iexplore)    
       ie.open(url)
 
-  def OnClickOutBtn(self, open, url, id, sso):
+  def OnClickOutBtn(self, open, url, id):
     num = self.entry.get().strip()
-    self.OnClick(open, url, num, id, sso)
+    self.OnClick(open, url, num, id)
 
-  def OnClickInBtn(self, open, url, id, sso):
+  def OnClickInBtn(self, open, url, id):
     num = self.entry2.get().strip()
-    self.OnClick(open, url, num, id, sso)
+    self.OnClick(open, url, num, id)
 
-  def OnClickWeb(self, open, url, id, sso):
-    self.OnClick(open, url, "", id, sso)
+  def OnClickWeb(self, open, url, id):
+    self.OnClick(open, url, "", id)
 
-  def OnClickDesktop(self, open, url, id, sso):
+  def OnClickDesktop(self, open, url, id):
     p = subprocess.Popen('start /B "" "' + url + '"', shell=True)
     p.wait()
 
-  def OnClick(self, open, url2, num, id, sso):
-    if sso:   
-      try:
-        r = requests.get("http://" + self.host + "/ping", timeout=0.1)
-        url = "http://" + self.host  + r"/ty/s/apps/" + id + "/open?uid=" + GetUID() 
-      except requests.exceptions.RequestException as e:
-        url = url2
-    else:
-      url = url2
-
+  def OnClick(self, open, url, num, id):
     if "__" in url:
       if len(num) > 0:
         url = url.replace("__", num)
@@ -302,19 +301,5 @@ class App():
         self.net = 'out'
     else:
       sys.exit()
-
-  def LoadData(self):
-    try:
-      r = requests.get("http://" + self.host + "/apps", timeout=0.1)
-      self.apps = r.json()     
-      with open(GetAppsCache(), 'w+') as outfile:
-        json.dump(r.json(), outfile)
-    except requests.exceptions.RequestException as e:
-      if os.path.isfile(GetAppsCache()):
-        with open(GetAppsCache(), 'r') as json_data:
-          d = json.load(json_data)
-          self.apps = d
-      else:
-        self.apps = []
 
 app = App()
