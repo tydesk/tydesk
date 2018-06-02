@@ -28,10 +28,10 @@
 ## 使用指南
 
 ### 下载服务器
-[https://github.com/tydesk/tyserver/releases](https://github.com/tydesk/tyserver/releases "服务器下载页面")， 下载TyServer.zip
+[https://github.com/tydesk/tydesk/releases](https://github.com/tydesk/tydesk/releases "服务器下载页面")， tyserver.zip
 
 ### 配置服务器
-下载完毕后，解压缩TyServer.zip。直接启动里面的Exe即可启动服务器。 要发布新应用，需要配置config.json
+下载完毕后，解压缩tyserver.zip。直接启动里面的Exe即可启动服务器。 要发布新应用，需要配置config.json
 
 
 ```json
