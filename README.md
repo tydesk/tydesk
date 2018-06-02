@@ -39,16 +39,6 @@
 
 ```json
 {
-"outApps": [
-    { "id":1, "title": "病理报告", "url": "http://baidu.com/__", "open": "chrome", "net": "out"},
-    { "id":2, "title": "百度URL测试", "url": "http://baidu.com", "open": "chrome", "net": "in"}
-  ],
-  "inApps": [
-    { "id":1, "title": "测试住院", "url": "http://baidu.com", "open": "IE", "net": "in"}
-  ],
-  "otherApps": [
-    { "id":1, "title": "测试其他", "url": "http://baidu.com", "open": "firefox", "net": "out"}
-  ],
   "admins": [
     { "ip": "192.168.30.101", "name": "Panzhang Wang"},
     { "ip": "192.168.40.34", "name": "Panzhang Wang"}
@@ -56,13 +46,7 @@
 }
 ```
 
-为了尽量简单和更容易扩展，分发的服务器端没有使用GUI界面，而是使用配置JSON的方式来实现。下面来解释几个注意事项：
-- outApps为门诊应用；inApps为住院应用；otherApps为其他应用；admins管理端界面访问授权
-- url 当包括参数时，使用双下划线来代替
-- open为可选打开URL的浏览器类型：IE, chrome, firefox
-- 内外网：out为外网, in为内网
-
-另外，如果你略懂一些Python和JSON的知识，你完全可以对桌面入口程序进行深度定制。config.json实际上就是一个JSON数据库，您可以采取Rest方式访问它，这也是没有使用GUI的好处。
+系统管理员不需要用户名密码登录，通过绑定管理员的IP，允许授权终端的访问。管理员通过WEB界面分发和部署应用。
 
 ### 下载客户端
 [https://github.com/tydesk/tydesk/releases](https://github.com/tydesk/tydesk/releases)，下载tydesk.zip
