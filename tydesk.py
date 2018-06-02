@@ -17,6 +17,7 @@ import webbrowser
 import tkMessageBox
 import time
 import winreg as reg
+import tknotify
 
 def subprocess_args(include_stdout=True):
     # The following is true only on Windows.
@@ -126,6 +127,7 @@ class App():
 
     self.root.resizable(0,0)
     self.LoadConfig()
+    self.GetAlerts()
     self.connectServer()
     self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     self.root.mainloop()
@@ -133,6 +135,20 @@ class App():
   def on_closing(self):
     if tkMessageBox.askokcancel(u"退出统医桌面", u"确定退出统医桌面吗？"):
       self.root.destroy()
+  
+  def GetAlerts(self):
+    try:  
+      url = "http://" + self.host  + r"/ty/alerts?uid=" + GetUID()
+      r = requests.get(url, timeout=0.1)
+      if r.json()['count'] > 0:
+        tknotify.show(title=u"告警！请处理")
+    except requests.exceptions.RequestException as e:
+      pass
+    if self.RTM.lower() in ("yes", "true", "t", "1"):    
+      delay = 5*1000
+    else:
+      delay = 30*60*1000
+    self.root.after(delay, self.GetAlerts)
 
   def connectServer(self):
     try:
@@ -141,7 +157,7 @@ class App():
       url = "http://" + self.host  + r"/connect"      
       r = requests.post(url, data=payload, timeout=0.1)      
       self.msg = r.json()['msg']
-      self.apps = r.json()['apps']  
+      self.apps = r.json()['apps']
       with open(GetAppsCache(), 'w+') as outfile:
         json.dump(r.json(), outfile)
     except requests.exceptions.RequestException as e:
@@ -154,11 +170,7 @@ class App():
         self.apps = []
 
     self.BuildUI()
-    if self.RTM.lower() in ("yes", "true", "t", "1"):    
-      delay = 5*1000
-    else:
-      delay = 30*60*1000
-    self.root.after(delay, self.connectServer)
+    self.root.after(30*60*1000, self.connectServer)
 
   def BuildUI(self):
     fnt = tkFont.Font(family="Arial Bold", size=18)
@@ -171,7 +183,7 @@ class App():
 
     self.labelWeb = Label(self.frame, text=u"网页应用", font=fnt)    
     self.labelWeb.grid(row=0, column=0, pady=15)
-    btn = Button(self.frame, text=u"统医网页", style="BW.TButton", command=partial(self.OpenWeb))
+    btn = Button(self.frame, text=u"查看消息", style="BW.TButton", command=partial(self.ShowMessages))
     btn.grid(row=1, column=0, sticky='WENS', padx=5, ipady=5)
    
     idx = 2
@@ -225,6 +237,14 @@ class App():
         idx = idx + 1
 
   
+  def ShowMessages(self):
+    url = "http://" + self.host  + r"/ty/messages?uid=" + GetUID()
+    chrome_path = find_chrome_win()        
+    if (chrome_path is not None): 
+      subprocess.call([chrome_path, url])
+    else:
+      ie = webbrowser.get(webbrowser.iexplore)    
+      ie.open(url)
   def OpenWeb(self):
     url = "http://" + self.host  + r"/ty/index?uid=" + GetUID()
     chrome_path = find_chrome_win()        
@@ -249,7 +269,7 @@ class App():
     p = subprocess.Popen('start /B "" "' + url + '"', shell=True)
     p.wait()
 
-  def OnClick(self, open, url, num, id):
+  def OnClick(self, open, url, num, id):    
     if "__" in url:
       if len(num) > 0:
         url = url.replace("__", num)
@@ -290,7 +310,7 @@ class App():
       self.config = configobj.ConfigObj(iniFile)
       self.innerHost = self.config["inner.host"]
       self.outerHost = self.config["outer.host"]
-      self.RTM = self.config["real.time.monitoring"]
+      self.RTM = self.config["real.time"]
       self.ip = GetIP()
 
       if self.ip[:self.ip.find('.')] == self.innerHost[:self.innerHost.find('.')]:        
