@@ -124,11 +124,15 @@ class App():
     self.root.style.configure("TY.TButton", font=(u'微软雅黑', 12))
     self.root.style.configure("RW.TButton", font=(u'微软雅黑', 12), foreground="red", background="white", width=25)
     self.root.style.configure("BW.TButton", font=(u'微软雅黑', 12), foreground="black", background="white", width=25)
+    self.root.style.configure("BLW.TButton", font=(u'微软雅黑', 12), foreground="blue", background="white", width=25)
 
     self.root.resizable(0,0)
     self.LoadConfig()
-    self.GetAlerts()
+    self.GetToken()
+    self.UserBox = StringVar()
+    self.Token = ""    
     self.connectServer()
+    self.GetAlerts()
     self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     self.root.mainloop()
 
@@ -138,10 +142,15 @@ class App():
   
   def GetAlerts(self):
     try:  
-      url = "http://" + self.host  + r"/ty/alerts?uid=" + GetUID()
+      url = "http://" + self.host  + r"/ty/alerts?uid=" + GetUID() + "&token=" + self.Token
       r = requests.get(url, timeout=0.1)
       if r.json()['count'] > 0:
         tknotify.show(title=u"告警！请处理")
+      
+      if self.userId:
+        self.UserBox.set(self.userId + u" 退出")
+      else:
+        self.UserBox.set(u"请登录")
     except requests.exceptions.RequestException as e:
       pass
     if self.RTM.lower() in ("yes", "true", "t", "1"):    
@@ -197,11 +206,8 @@ class App():
     self.labelDesk = Label(self.frame, text=u"桌面应用", font=fnt)    
     self.labelDesk.grid(row=0, column=1, pady=15)
 
-    if self.msg == 'ok':
-      btn = Button(self.frame, text=u"本机信息", style="BW.TButton", command=partial(self.OpenWeb))      
-    else:
-      btn = Button(self.frame, text=self.msg, style="RW.TButton", command=partial(self.OpenWeb))
-    btn.grid(row=1, column=1, sticky='WENS', padx=5, ipady=5)
+    self.UserBtn = Button(self.frame, textvariable=self.UserBox, style="BLW.TButton", command=partial(self.Login)) 
+    self.UserBtn.grid(row=1, column=1, sticky='WENS', padx=5, ipady=5)
 
     idx = 2
     for app in self.apps:
@@ -210,6 +216,7 @@ class App():
           command= partial(self.OnClickDesktop, open=app['open'], url=app['url'], id=app['id']))
         btn.grid(row=idx, column=1, sticky='WENS', padx=5, ipady=5)
         idx = idx + 1
+
 
     self.label = Label(self.frame, text=u"门诊相关", font=fnt)
     self.entry = Entry(self.frame, width=10, font=fnt2)
@@ -245,14 +252,31 @@ class App():
     else:
       ie = webbrowser.get(webbrowser.iexplore)    
       ie.open(url)
-  def OpenWeb(self):
-    url = "http://" + self.host  + r"/ty/index?uid=" + GetUID()
-    chrome_path = find_chrome_win()        
-    if (chrome_path is not None): 
-      subprocess.call([chrome_path, url])
+
+  def Login(self):
+    if self.token:
+      result = tkMessageBox.askquestion("退出统医桌面", "确定退出吗？", icon='warning')
+      if result == 'yes':
+        self.UserBox.set(u'请登录')    
+        try:  
+          url = "http://" + self.host  + r"/ty/logout?uid=" + GetUID()
+          r = requests.get(url, timeout=0.1)
+          self.userId = ""
+          self.token = ""
+          time.sleep( 0.1 )
+          self.LoginWaiting()
+        except requests.exceptions.RequestException as e:
+          pass
+      else:
+        return
     else:
-      ie = webbrowser.get(webbrowser.iexplore)    
-      ie.open(url)
+      url = "http://" + self.host  + r"/ty/login?uid=" + GetUID()
+      chrome_path = find_chrome_win()        
+      if (chrome_path is not None): 
+        subprocess.call([chrome_path, url])
+      else:
+        ie = webbrowser.get(webbrowser.iexplore)    
+        ie.open(url)
 
   def OnClickOutBtn(self, open, url, id):
     num = self.entry.get().strip()
@@ -321,5 +345,49 @@ class App():
         self.net = 'out'
     else:
       sys.exit()
+
+  def GetToken(self):
+    TokenFile = expanduser("~") + r"\tytoken.json"
+    if os.path.isfile(TokenFile):
+      with open(TokenFile, 'r') as json_data:
+        d = json.load(json_data)
+        self.token = d['token']
+        self.userId = d['userId']
+    else:
+      self.token = ""
+      self.userId = ""
+      with open(TokenFile, 'w+') as outfile:
+        json.dump({ "token": self.token, "userId": self.userId}, outfile)
+
+
+    try:  
+      url = "http://" + self.host  + r"/ty/token?uid=" + GetUID()
+      r = requests.get(url, timeout=0.1)
+      self.userId = r.json()['userId']
+      self.token = r.json()['token']
+      with open(TokenFile, 'w+') as outfile:
+        json.dump({ "token": self.token, "userId": self.userId}, outfile)
+    except requests.exceptions.RequestException as e:
+      pass
+    
+    if not self.token:
+      self.root.after(2000, self.GetToken)
+
+  def LoginWaiting(self):
+    TokenFile = expanduser("~") + r"\tytoken.json"
+    try:  
+      url = "http://" + self.host  + r"/ty/token?uid=" + GetUID()
+      r = requests.get(url, timeout=0.1)
+      self.userId = r.json()['userId']
+      self.token = r.json()['token']
+      with open(TokenFile, 'w+') as outfile:
+        json.dump({ "token": self.token, "userId": self.userId}, outfile)
+    except requests.exceptions.RequestException as e:
+      pass
+    
+    if not self.token:
+      self.root.after(2000, self.LoginWaiting)
+    else:
+      self.UserBox.set(self.userId + u' 退出')
 
 app = App()
