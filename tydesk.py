@@ -363,8 +363,8 @@ class App():
     try:  
       url = "http://" + self.host  + r"/ty/token?uid=" + GetUID()
       r = requests.get(url, timeout=0.1)
-      self.userId = r.json()['userId']
-      self.token = r.json()['token']
+      self.userId = r.json()['userId'] if 'userId' in r.json() else ""
+      self.token = r.json()['token'] if 'token' in r.json() else ""
       with open(TokenFile, 'w+') as outfile:
         json.dump({ "token": self.token, "userId": self.userId}, outfile)
     except requests.exceptions.RequestException as e:
