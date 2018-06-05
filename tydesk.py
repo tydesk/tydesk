@@ -151,7 +151,10 @@ class App():
         self.UserBox.set(self.userId + u" 退出")
       else:
         self.UserBox.set(u"请登录")
+      self.online = True
     except requests.exceptions.RequestException as e:
+      self.UserBox.set(u"已离线")
+      self.online = False
       pass
     if self.RTM.lower() in ("yes", "true", "t", "1"):    
       delay = 5*1000
@@ -168,9 +171,10 @@ class App():
       self.msg = r.json()['msg']
       self.apps = r.json()['apps']
       with open(GetAppsCache(), 'w+') as outfile:
-        json.dump(r.json(), outfile)
+        json.dump(r.json()['apps'], outfile)
     except requests.exceptions.RequestException as e:
-      self.msg = "离线运行"
+      self.msg = u"离线运行"
+      self.UserBox.set(u'离线运行')
       if os.path.isfile(GetAppsCache()):
         with open(GetAppsCache(), 'r') as json_data:
           d = json.load(json_data)
@@ -245,6 +249,10 @@ class App():
 
   
   def ShowMessages(self):
+    if not self.online:
+      tkMessageBox.showinfo(u"提示", u"无法登录！系统正在离线运行")
+      return
+      
     url = "http://" + self.host  + r"/ty/messages?uid=" + GetUID()
     chrome_path = find_chrome_win()        
     if (chrome_path is not None): 
@@ -254,6 +262,9 @@ class App():
       ie.open(url)
 
   def Login(self):
+    if not self.online:
+      tkMessageBox.showinfo(u"提示", u"无法登录！系统正在离线运行")
+      return
     if self.token:
       result = tkMessageBox.askquestion("退出统医桌面", "确定退出吗？", icon='warning')
       if result == 'yes':
