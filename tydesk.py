@@ -44,8 +44,7 @@ else:
 
 
 try:
-  host = "http://192.168.40.34:3000"
-  # host = "https://tydesk.com"
+  host = "https://tydesk.com"
   r = requests.get(host + "/get/mtime", timeout=0.1)
   if r.json()['mtime'] == mtime:
     pass

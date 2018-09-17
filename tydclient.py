@@ -18,8 +18,7 @@ import math
 import hashlib, binascii
 
 def GetHost():
-  return "http://192.168.40.34:3000"
-  # return "https://tydesk.com"
+  return "https://tydesk.com"
 
 def GetIP():
   return socket.gethostbyname(socket.gethostname())
