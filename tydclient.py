@@ -273,6 +273,7 @@ class RegisterDialog(wx.Dialog):
         wx.MessageBox(u'接入成功，请重启客户端', u'提示')
       pass
     except requests.exceptions.RequestException as e:
+      print e
       wx.MessageBox(u'网络故障，请一会儿重试', u'提示')
       return False
     
@@ -349,6 +350,7 @@ class CheckinDialog(wx.Dialog):
         self.GetParent().Layout()
       pass
     except requests.exceptions.RequestException as e:
+      print e
       wx.MessageBox(u'网络故障，请一会儿重试', u'提示')
       return False
     
