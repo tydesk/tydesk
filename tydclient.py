@@ -4,7 +4,6 @@
 import wx
 import os, os.path
 import wx.lib.agw.toasterbox as TB
-import socket
 import requests
 import subprocess
 from os.path import expanduser
@@ -12,111 +11,17 @@ import platform
 import json
 import wx.lib.scrolledpanel as scrolled
 import wx.lib.buttons as buttons
-import configobj
 import time
 import math
 import hashlib, binascii
-
-def GetHost():
-  return "https://tydesk.com"
-
-def GetIP():
-  return socket.gethostbyname(socket.gethostname())
+import tydhost as TH
+import browsers
 
 def GetMainToken(salt, input_pwd):
   fromHex_salt = binascii.a2b_hex(salt)    
   dk = hashlib.pbkdf2_hmac('sha1', input_pwd.encode('utf-8'), fromHex_salt, 1000, dklen=32)
   return binascii.hexlify(dk).decode('utf-8')
   
-
-def getMID():
-  mac = ''
-  out2 = expanduser("~") + r"\out2.txt"
-  with open(out2, 'w') as f2:
-    try:            
-      txt = subprocess.check_output(["wmic","csproduct","get", "uuid"], **subprocess_args(False)).strip().split("\n")[1]                    
-      f2.write(txt)
-      mac = txt
-    except OSError as e:
-      f2.write('Failed: ' + str(e))
-      mac = ''
-  return mac
-
-def find_chrome_win():
-  import winreg as reg
-  reg_path = r'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe'
-
-  for install_type in reg.HKEY_LOCAL_MACHINE, reg.HKEY_CURRENT_USER:
-    try:
-      reg_key = reg.OpenKey(install_type, reg_path, 0, reg.KEY_READ)
-      chrome_path = reg.QueryValue(reg_key, None)
-      reg_key.Close()
-    except WindowsError:
-      pass
-
-  return chrome_path
-
-def find_firefox_win():
-  import winreg as reg
-  reg_path = r'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe'
-
-  for install_type in reg.HKEY_LOCAL_MACHINE, reg.HKEY_CURRENT_USER:
-    try:
-      reg_key = reg.OpenKey(install_type, reg_path, 0, reg.KEY_READ)
-      firefox_path = reg.QueryValue(reg_key, None)
-      reg_key.Close()
-    except WindowsError:
-      pass
-
-  return firefox_path
-
-def subprocess_args(include_stdout=True):
-    # The following is true only on Windows.
-    if hasattr(subprocess, 'STARTUPINFO'):
-        # On Windows, subprocess calls will pop up a command window by default
-        # when run from Pyinstaller with the ``--noconsole`` option. Avoid this
-        # distraction.
-        si = subprocess.STARTUPINFO()
-        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        # Windows doesn't search the path by default. Pass it an environment so
-        # it will.
-        env = os.environ
-    else:
-        si = None
-        env = None
-
-    # ``subprocess.check_output`` doesn't allow specifying ``stdout``::
-    #
-    #   Traceback (most recent call last):
-    #     File "test_subprocess.py", line 58, in <module>
-    #       **subprocess_args(stdout=None))
-    #     File "C:\Python27\lib\subprocess.py", line 567, in check_output
-    #       raise ValueError('stdout argument not allowed, it will be overridden.')
-    #   ValueError: stdout argument not allowed, it will be overridden.
-    #
-    # So, add it only if it's needed.
-    if include_stdout:
-        ret = {'stdout': subprocess.PIPE}
-    else:
-        ret = {}
-
-    # On Windows, running this from the binary produced by Pyinstaller
-    # with the ``--noconsole`` option requires redirecting everything
-    # (stdin, stdout, stderr) to avoid an OSError exception
-    # "[Error 6] the handle is invalid."
-    ret.update({'stdin': subprocess.PIPE,
-                'stderr': subprocess.PIPE,
-                'startupinfo': si,
-                'env': env })
-    return ret
-
-def GetConfig():
-  iniFile = "config.ini"
-  config = configobj.ConfigObj(iniFile)
-  key = config["key"]
-  return key
-
-
 def OpenWith(flag, url):
   CheckinJsonFile = expanduser("~") + r"\tyd_checkin.json"
 
@@ -138,12 +43,12 @@ def OpenWith(flag, url):
     subprocess.Popen('start /B "" "' + url + '"', shell=True)
   else:
     if '?' in url:
-      url = url + '&tyd_emp=' + emp + '&tyd_pc=' + getMID()
+      url = url + '&tyd_emp=' + emp + '&tyd_pc=' + TH.pcid()
     else:
-      url = url + '?tyd_emp=' + emp + '&tyd_pc=' + getMID()
+      url = url + '?tyd_emp=' + emp + '&tyd_pc=' + TH.pcid()
 
     if (flag == 'Chrome'):
-      chrome_path = find_chrome_win()        
+      chrome_path = browsers.find_chrome_win()        
       if (chrome_path is not None):
         subprocess.Popen(chrome_path + ' "'+url+'"')
       else:
@@ -151,7 +56,7 @@ def OpenWith(flag, url):
         return
 
     if (flag == 'Firefox'):
-      firefox_path = find_firefox_win()        
+      firefox_path = browsers.find_firefox_win()        
       if (firefox_path is not None):
         subprocess.Popen(firefox_path + ' "'+url+'"')
       else:
@@ -253,7 +158,7 @@ class RegisterDialog(wx.Dialog):
 
   def OnEnterCode(self, e):
     tokenJson = expanduser("~") + r"\tyd_token.json"
-    key = GetConfig()
+    key = TH.config()
     code = self.tcRegister.GetValue()
     osname = platform.system() + "_" + platform.release()
     try:
@@ -261,7 +166,7 @@ class RegisterDialog(wx.Dialog):
         "code": self.tcRegister.GetValue(),
         "memo": self.tcMemo.GetValue()
       }
-      r = requests.post(GetHost() + "/api/register/" + key + "/" + getMID() + "/" + GetIP() + "/" + osname, data=data, timeout=3)
+      r = requests.post(TH.server() + "/api/register/" + key + "/" + TH.pcid() + "/" + TH.ip() + "/" + osname, data=data, timeout=3)
       with open(tokenJson, 'w+') as outfile:
         json.dump(r.json(), outfile)
         
@@ -319,14 +224,14 @@ class CheckinDialog(wx.Dialog):
 
   def OnConfirm(self, e):
     tokenJson = expanduser("~") + r"\tyd_token.json"
-    key = GetConfig()
+    key = TH.config()
     emp = self.tcCheckin.GetValue()
     if not emp:
       wx.MessageBox(u'员工号不能为空', u'错误')
       return
 
     try:
-      r = requests.get(GetHost() + "/checkin/" + key + "/" + getMID() + "/" + GetToken() + "/" + emp, timeout=3)              
+      r = requests.get(TH.server() + "/checkin/" + key + "/" + TH.pcid() + "/" + GetToken() + "/" + emp, timeout=3)              
       ok = r.json()['ok']
       if ok == 0:
         wx.MessageBox(u'信息有误，请联系贵方管理员', u'提示')
@@ -458,7 +363,7 @@ class TydMainFrame(wx.Frame):
     if self.token is None:
       return False
     try:
-      r = requests.get(GetHost() + "/ping/" + GetConfig() + "/" + getMID() + "/" + self.token, timeout=10)
+      r = requests.get(TH.server() + "/ping/" + TH.config() + "/" + TH.pcid() + "/" + self.token, timeout=10)
       if (r.json()['ok'] == 1):
         self.time = str(r.json()['time'])
         self.TotalMsgs = r.json()['count']
@@ -503,10 +408,10 @@ class TydMainFrame(wx.Frame):
       self.NotReady()
       return False
 
-    key = GetConfig()
+    key = TH.config()
     dataJson = expanduser("~") + r"\data.json"
     try:
-      r = requests.get(GetHost() + "/apps/" + key + "/" + getMID() + "/" + self.token, timeout=3)
+      r = requests.get(TH.server() + "/apps/" + key + "/" + TH.pcid() + "/" + self.token, timeout=3)
       
       if (r.json()['ok'] == 1):        
         self.time = str(r.json()['time'])
@@ -572,8 +477,8 @@ class TydMainFrame(wx.Frame):
     timestamp = self.time if self.time else timestamp
     mt = GetMainToken(self.token, timestamp)
     
-    key = GetConfig()
-    OpenWith('Chrome', GetHost() + "/t/" + key + "/" + mt + "/" + timestamp + "/help")
+    key = TH.config()
+    OpenWith('Chrome', TH.server() + "/t/" + key + "/" + mt + "/" + timestamp + "/help")
     return
 
   def OnPhones(self, event):
@@ -586,8 +491,8 @@ class TydMainFrame(wx.Frame):
     timestamp = self.time if self.time else timestamp
     mt = GetMainToken(self.token, timestamp)
     
-    key = GetConfig()
-    OpenWith('Chrome', GetHost() + "/t/" + key + "/" + mt + "/" + timestamp + "/phones")
+    key = TH.config()
+    OpenWith('Chrome', TH.server() + "/t/" + key + "/" + mt + "/" + timestamp + "/phones")
     return
 
   def OnMessages(self, event):
@@ -600,8 +505,8 @@ class TydMainFrame(wx.Frame):
     timestamp = self.time if self.time else timestamp
     mt = GetMainToken(self.token, timestamp)
     
-    key = GetConfig()
-    OpenWith('Chrome', GetHost() + "/t/" + key + "/" + mt + "/" + timestamp + "/msgs")
+    key = TH.config()
+    OpenWith('Chrome', TH.server() + "/t/" + key + "/" + mt + "/" + timestamp + "/msgs")
     return
 
   def OnRegister(self, event):      
