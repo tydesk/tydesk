@@ -8,8 +8,7 @@ import socket
 import configobj
 
 def server():
-  # return "https://tydesk.com"
-  return "http://192.168.40.34:3000"
+  return "https://tydesk.com"
 
 def ip():
   return socket.gethostbyname(socket.gethostname())
