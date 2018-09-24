@@ -8,7 +8,8 @@ import socket
 import configobj
 
 def server():
-  return "https://tydesk.com"
+  # return "https://tydesk.com"
+  return "http://192.168.40.34:3000"
 
 def ip():
   return socket.gethostbyname(socket.gethostname())
@@ -61,7 +62,7 @@ def subprocess_args(include_stdout=True):
 
 def pcid():
   pcid = ''
-  out = expanduser("~") + r"\pcbox.txt"
+  out = expanduser("~") + r"\tyd_pcid.txt"
   with open(out, 'w') as f:
     try:            
       txt = subprocess.check_output(["wmic","csproduct","get", "uuid"], **subprocess_args(False)).strip().split("\n")[1]                    
@@ -71,3 +72,16 @@ def pcid():
       f.write('Failed: ' + str(e))
       pcid = ''
   return pcid
+
+def model():
+  m = ''
+  out = expanduser("~") + r"\tyd_model.txt"
+  with open(out, 'w') as f:
+    try:            
+      txt = subprocess.check_output(["wmic","computersystem","get", "model"], **subprocess_args(False)).strip().split("\n")[1]                    
+      f.write(txt)
+      m = txt
+    except OSError as e:
+      f.write('Failed: ' + str(e))
+      m = ''
+  return m
